@@ -138,6 +138,9 @@ async def main():
             if isinstance(result, Exception):
                 print(f"  Test {i+1} exception: {result}")
 
+    test_id = "1811.09332"
+    print(await _handle_fetch({"id": test_id}))
+
 
 if __name__ == "__main__":
     asyncio.run(main())

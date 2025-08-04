@@ -63,24 +63,10 @@ async def handle_list_tools() -> list[types.Tool]:
                 "properties": {
                     "id": {
                         "type": "string",
-                        "description": "The document id returned by the search tool (arXiv ID)",
+                        "description": "The document id returned by the search tool (arXiv ID, e.g. '2403.12345')",
                     }
                 },
                 "required": ["id"],
-            },
-        ),
-        types.Tool(
-            name="get_paper_prompt",
-            description="Get a flattened LaTeX code of a paper from arXiv ID for precise interpretation of mathematical expressions",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "arxiv_id": {
-                        "type": "string",
-                        "description": "The arXiv ID of the paper (e.g., '2403.12345')",
-                    }
-                },
-                "required": ["arxiv_id"],
             },
         ),
     ]
@@ -95,8 +81,6 @@ async def handle_call_tool(
         return await _handle_search(arguments)
     elif name == "fetch":
         return await _handle_fetch(arguments)
-    elif name == "get_paper_prompt":
-        return await _handle_get_paper_prompt(arguments)
     else:
         raise ValueError(f"Unknown tool: {name}")
 
@@ -187,39 +171,6 @@ async def _handle_fetch(args: dict[str, Any]) -> list[types.TextContent]:
                 },
             )
         ]
-
-
-async def _handle_get_paper_prompt(args: dict[str, Any]) -> list[types.TextContent]:
-    """Handle get_paper_prompt tool calls (backward compatibility)."""
-    if not args or "arxiv_id" not in args:
-        raise ValueError("Missing required argument: arxiv_id")
-
-    arxiv_id = args["arxiv_id"]
-
-    try:
-        logger.info(f"Processing arXiv paper: {arxiv_id}")
-
-        # Process the LaTeX source using arxiv-to-prompt
-        prompt = process_latex_source(arxiv_id)
-
-        # Append instructions for rendering LaTeX
-        instructions = """
-
-IMPORTANT INSTRUCTIONS FOR RENDERING:
-When discussing this paper, please use dollar sign notation ($...$) for inline equations and double dollar signs ($...$) for display equations when providing responses that include LaTeX mathematical expressions.
-"""
-
-        result = prompt + instructions
-
-        logger.info(f"Successfully processed arXiv paper: {arxiv_id}")
-
-        return [types.TextContent(type="text", text=result)]
-
-    except Exception as e:
-        error_msg = f"Error processing arXiv paper {arxiv_id}: {str(e)}"
-        logger.error(error_msg)
-
-        return [types.TextContent(type="text", text=error_msg)]
 
 
 async def main():
